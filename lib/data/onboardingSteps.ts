@@ -1,0 +1,126 @@
+import { OnboardingStep } from '@/lib/types';
+
+export const verraSteps: OnboardingStep[] = [
+    {
+        id: 'verra-1',
+        title: 'Create Verra Account',
+        description: 'Register for a Verra Registry account at verra.org',
+        completed: false,
+        documentRequired: false,
+    },
+    {
+        id: 'verra-2',
+        title: 'Prepare Project Design Document (PDD)',
+        description: 'Complete the VCS Project Description template with project details, baseline scenario, and monitoring plan',
+        completed: false,
+        documentRequired: true,
+    },
+    {
+        id: 'verra-3',
+        title: 'Select Approved Methodology',
+        description: 'Choose an approved VCS methodology that matches your project type',
+        completed: false,
+        documentRequired: false,
+    },
+    {
+        id: 'verra-4',
+        title: 'Engage Validation/Verification Body (VVB)',
+        description: 'Contract with an accredited VVB to validate your project',
+        completed: false,
+        documentRequired: false,
+    },
+    {
+        id: 'verra-5',
+        title: 'Upload Validation Report',
+        description: 'Submit the validation report from your VVB',
+        completed: false,
+        documentRequired: true,
+    },
+    {
+        id: 'verra-6',
+        title: 'Submit Project Documentation',
+        description: 'Upload all required project documents including PDD, validation report, and supporting evidence',
+        completed: false,
+        documentRequired: true,
+    },
+    {
+        id: 'verra-7',
+        title: 'Complete Public Comment Period',
+        description: 'Allow 30-day public comment period for stakeholder feedback',
+        completed: false,
+        documentRequired: false,
+    },
+    {
+        id: 'verra-8',
+        title: 'Receive Project Registration',
+        description: 'Await Verra approval and receive your unique Project ID',
+        completed: false,
+        documentRequired: false,
+    },
+];
+
+export const goldStandardSteps: OnboardingStep[] = [
+    {
+        id: 'gs-1',
+        title: 'Create Gold Standard Account',
+        description: 'Register for a Gold Standard Registry account at goldstandard.org',
+        completed: false,
+        documentRequired: false,
+    },
+    {
+        id: 'gs-2',
+        title: 'Complete Preliminary Review',
+        description: 'Submit project concept note for preliminary eligibility assessment',
+        completed: false,
+        documentRequired: true,
+    },
+    {
+        id: 'gs-3',
+        title: 'Prepare Project Design Document',
+        description: 'Complete the Gold Standard Project Design Document with stakeholder consultation results',
+        completed: false,
+        documentRequired: true,
+    },
+    {
+        id: 'gs-4',
+        title: 'Conduct Stakeholder Consultation',
+        description: 'Engage local stakeholders and document feedback',
+        completed: false,
+        documentRequired: true,
+    },
+    {
+        id: 'gs-5',
+        title: 'Select Approved Methodology',
+        description: 'Choose a Gold Standard approved methodology or develop a new one',
+        completed: false,
+        documentRequired: false,
+    },
+    {
+        id: 'gs-6',
+        title: 'Engage Validation/Verification Body',
+        description: 'Contract with a Gold Standard accredited auditor',
+        completed: false,
+        documentRequired: false,
+    },
+    {
+        id: 'gs-7',
+        title: 'Upload Validation Report',
+        description: 'Submit the validation report and performance certification',
+        completed: false,
+        documentRequired: true,
+    },
+    {
+        id: 'gs-8',
+        title: 'Submit for Registration',
+        description: 'Upload all documentation and submit for Gold Standard review',
+        completed: false,
+        documentRequired: true,
+    },
+    {
+        id: 'gs-9',
+        title: 'Receive Project Certification',
+        description: 'Await Gold Standard approval and receive your certification',
+        completed: false,
+        documentRequired: false,
+    },
+];
