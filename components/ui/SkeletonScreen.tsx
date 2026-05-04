@@ -7,7 +7,7 @@ interface SkeletonProps {
 export function Skeleton({ className = "" }: SkeletonProps) {
   return (
     <motion.div
-      className={`bg-gray-800 rounded ${className}`}
+      className={`bg-muted rounded ${className}`}
       animate={{ opacity: [0.5, 0.8, 0.5] }}
       transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
     />
@@ -16,7 +16,7 @@ export function Skeleton({ className = "" }: SkeletonProps) {
 
 export function SkeletonCard() {
   return (
-    <div className="p-6 border border-gray-800 rounded-lg space-y-4">
+    <div className="p-6 border border-border rounded-lg space-y-4">
       <Skeleton className="h-6 w-1/3" />
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-2/3" />

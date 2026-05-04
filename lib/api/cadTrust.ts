@@ -11,10 +11,25 @@
  * - Network error handling
  * - Automatic fallback to mock data
  * - Data source indicator ("live" or "mock")
+ * - Retry logic with exponential backoff (Issue 10 fix)
+ * - Circuit breaker pattern for resilience (Issue 10 fix)
  */
 
 import { CADTrustProject, CADTrustRPCRequest, CADTrustRPCResponse } from "@/lib/types";
-import { getMockProject, getMockProjectByRegistryId } from "@/lib/mock-data/credits";
+import { getDemoProject, getDemoProjectByRegistryId } from "@/lib/demo-data/credits";
+import { CircuitBreaker, retryWithBackoff } from "@/lib/utils/retry";
+
+/**
+ * FIXED: Typed error for circuit breaker open state
+ */
+export class CircuitBreakerOpenError extends Error {
+    code = 'CIRCUIT_BREAKER_OPEN';
+
+    constructor(message: string = 'Circuit breaker is OPEN') {
+        super(message);
+        this.name = 'CircuitBreakerOpenError';
+    }
+}
 
 /**
  * CAD Trust API endpoint URL
@@ -25,6 +40,17 @@ const CAD_TRUST_API_URL = "https://rpc.climateactiondata.org/v2";
  * Request timeout in milliseconds (10 seconds)
  */
 const REQUEST_TIMEOUT = 10000;
+
+/**
+ * Circuit breaker for CAD Trust API
+ * Prevents cascading failures by stopping requests when service is down
+ */
+const cadTrustCircuitBreaker = new CircuitBreaker({
+    failureThreshold: 5,
+    resetTimeout: 60000, // 1 minute
+    onOpen: () => console.warn('CAD Trust API circuit breaker opened'),
+    onClose: () => console.log('CAD Trust API circuit breaker closed'),
+});
 
 /**
  * Result type that includes the data source indicator
@@ -68,75 +94,115 @@ export async function fetchCADTrustProject(projectUid: string): Promise<CADTrust
     }
 
     try {
-        // Create JSON-RPC 2.0 request
-        const rpcRequest: CADTrustRPCRequest = {
-            jsonrpc: "2.0",
-            method: "cadt_getProject",
-            params: [projectUid],
-            id: Date.now(), // Use timestamp as unique request ID
-        };
+        // Use circuit breaker to prevent cascading failures
+        return await cadTrustCircuitBreaker.execute(async () => {
+            // Use retry logic with exponential backoff
+            return await retryWithBackoff(
+                async () => {
+                    // Create JSON-RPC 2.0 request
+                    const rpcRequest: CADTrustRPCRequest = {
+                        jsonrpc: "2.0",
+                        method: "cadt_getProject",
+                        params: [projectUid],
+                        id: Date.now(), // Use timestamp as unique request ID
+                    };
 
-        // Create AbortController for timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+                    // Create AbortController for timeout
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
-        try {
-            // Make the API request
-            const response = await fetch(CAD_TRUST_API_URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
+                    try {
+                        // Make the API request
+                        const response = await fetch(CAD_TRUST_API_URL, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(rpcRequest),
+                            signal: controller.signal,
+                        });
+
+                        // Clear the timeout
+                        clearTimeout(timeoutId);
+
+                        // Check if response is OK
+                        if (!response.ok) {
+                            const error: any = new Error(`HTTP error: ${response.status} ${response.statusText}`);
+                            error.response = response;
+                            throw error;
+                        }
+
+                        // Parse JSON-RPC response
+                        const rpcResponse: CADTrustRPCResponse = await response.json();
+
+                        // Check for JSON-RPC error
+                        if (rpcResponse.error) {
+                            const error: any = new Error(
+                                `RPC error: ${rpcResponse.error.message} (code: ${rpcResponse.error.code})`
+                            );
+                            error.rpcError = rpcResponse.error;
+                            throw error;
+                        }
+
+                        // Check if result exists
+                        if (!rpcResponse.result) {
+                            throw new Error("Empty result from API");
+                        }
+
+                        // Successfully retrieved live data
+                        return {
+                            project: rpcResponse.result as CADTrustProject,
+                            dataSource: "live" as const,
+                        };
+                    } catch (fetchError) {
+                        // Clear timeout on error to prevent memory leak
+                        clearTimeout(timeoutId);
+
+                        // Handle timeout specifically
+                        if (fetchError instanceof Error && fetchError.name === "AbortError") {
+                            const error: any = new Error("Request timeout");
+                            error.code = "ETIMEDOUT";
+                            throw error;
+                        }
+
+                        // Re-throw other errors
+                        throw fetchError;
+                    }
                 },
-                body: JSON.stringify(rpcRequest),
-                signal: controller.signal,
-            });
-
-            // Clear the timeout
-            clearTimeout(timeoutId);
-
-            // Check if response is OK
-            if (!response.ok) {
-                console.error(`CAD Trust API HTTP error: ${response.status} ${response.statusText}`);
-                return fallbackToMockData(projectUid, `HTTP error: ${response.status}`);
-            }
-
-            // Parse JSON-RPC response
-            const rpcResponse: CADTrustRPCResponse = await response.json();
-
-            // Check for JSON-RPC error
-            if (rpcResponse.error) {
-                console.error("CAD Trust API RPC error:", rpcResponse.error);
-                return fallbackToMockData(
-                    projectUid,
-                    `RPC error: ${rpcResponse.error.message} (code: ${rpcResponse.error.code})`
-                );
-            }
-
-            // Check if result exists
-            if (!rpcResponse.result) {
-                console.error("CAD Trust API returned empty result");
-                return fallbackToMockData(projectUid, "Empty result from API");
-            }
-
-            // Successfully retrieved live data
-            return {
-                project: rpcResponse.result as CADTrustProject,
-                dataSource: "live",
-            };
-        } catch (fetchError) {
-            // Clear timeout on error to prevent memory leak
-            clearTimeout(timeoutId);
-
-            // Handle timeout specifically
-            if (fetchError instanceof Error && fetchError.name === "AbortError") {
-                console.error("CAD Trust API request timed out after 10 seconds");
-                return fallbackToMockData(projectUid, "Request timeout");
-            }
-
-            // Handle other fetch errors
-            throw fetchError;
-        }
+                {
+                    maxRetries: 3,
+                    initialDelay: 1000,
+                    maxDelay: 5000,
+                    shouldRetry: (error: any) => {
+                        // Retry on network errors
+                        if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
+                            return true;
+                        }
+                        // Retry on 5xx server errors
+                        if (error.response?.status >= 500 && error.response?.status < 600) {
+                            return true;
+                        }
+                        // Retry on rate limiting
+                        if (error.response?.status === 429) {
+                            return true;
+                        }
+                        // Don't retry on 4xx client errors (except 429)
+                        return false;
+                    },
+                    onRetry: (attempt: number, error: any) => {
+                        console.warn(`CAD Trust API retry attempt ${attempt}:`, error.message);
+                    },
+                }
+            );
+        });
     } catch (error) {
+        // FIXED: Handle circuit breaker open state with typed error check
+        if (error instanceof CircuitBreakerOpenError ||
+            (error instanceof Error && error.message === 'Circuit breaker is OPEN')) {
+            console.error('CAD Trust API is currently unavailable (circuit breaker open)');
+            return fallbackToMockData(projectUid, 'Service temporarily unavailable');
+        }
+
         // Handle any other errors (network errors, JSON parsing errors, etc.)
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         console.error("Failed to fetch from CAD Trust API:", errorMessage);
@@ -170,20 +236,20 @@ export async function fetchCADTrustProjectByRegistryId(
 ): Promise<CADTrustFetchResult> {
     // In a real implementation, we would need to query the API to find
     // the project UID from the registry ID. For now, we'll try to use
-    // the mock data lookup which has this mapping.
+    // the demo data lookup which has this mapping.
 
-    const mockProject = getMockProjectByRegistryId(registryId);
+    const demoProject = getDemoProjectByRegistryId(registryId);
 
-    if (mockProject && mockProject.projectId) {
+    if (demoProject && demoProject.projectId) {
         // Try to fetch from live API using the project UID
-        return fetchCADTrustProject(mockProject.projectId);
+        return fetchCADTrustProject(demoProject.projectId);
     }
 
-    // If no mapping found, return mock data directly
+    // If no mapping found, return demo data directly
     return {
-        project: mockProject,
+        project: demoProject,
         dataSource: "mock",
-        error: mockProject ? undefined : "Project not found",
+        error: demoProject ? undefined : "Project not found",
     };
 }
 
@@ -195,23 +261,23 @@ export async function fetchCADTrustProjectByRegistryId(
  * @returns Fetch result with mock data and error information
  */
 function fallbackToMockData(projectUid: string, errorMessage: string): CADTrustFetchResult {
-    const mockProject = getMockProject(projectUid);
+    const demoProject = getDemoProject(projectUid);
 
-    if (mockProject) {
-        console.log(`Falling back to mock data for project: ${projectUid}`);
+    if (demoProject) {
+        console.log(`Falling back to demo data for project: ${projectUid}`);
         return {
-            project: mockProject,
+            project: demoProject,
             dataSource: "mock",
             error: errorMessage,
         };
     }
 
-    // No mock data available either
-    console.error(`No mock data available for project: ${projectUid}`);
+    // No demo data available either
+    console.error(`No demo data available for project: ${projectUid}`);
     return {
         project: null,
         dataSource: "mock",
-        error: `${errorMessage} (no mock data available)`,
+        error: `${errorMessage} (no demo data available)`,
     };
 }
 

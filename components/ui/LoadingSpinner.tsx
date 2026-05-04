@@ -18,7 +18,7 @@ export function LoadingSpinner({
   return (
     <div className={`flex items-center justify-center ${className}`}>
       <motion.div
-        className={`${sizeClasses[size]} border-2 border-carbon-green-400 border-t-transparent rounded-full`}
+        className={`${sizeClasses[size]} border-2 border-primary border-t-transparent rounded-full`}
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
       />

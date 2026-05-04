@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { UserProfile } from "@/lib/types";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const STORAGE_KEY = "carbon-trade-x:profile";
 
@@ -31,16 +32,15 @@ export function KYCForm() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load profile from localStorage on mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const loadedProfile: UserProfile = JSON.parse(stored);
-        setProfile(loadedProfile);
+        setProfile(JSON.parse(stored));
       }
     } catch (error) {
       console.error("Failed to load profile:", error);
+      toast.error("Could not load profile data.");
     } finally {
       setIsLoading(false);
     }
@@ -48,43 +48,22 @@ export function KYCForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate required fields
-    if (!profile.name || profile.name.trim().length === 0) {
-      toast.error("Name is required");
+    if (!profile.name?.trim() || !profile.email?.trim()) {
+      toast.error("Name and Email are required.");
       return;
     }
-
-    if (!profile.email || profile.email.trim().length === 0) {
-      toast.error("Email is required");
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(profile.email)) {
-      toast.error("Please enter a valid email address");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email)) {
+      toast.error("Please enter a valid email address.");
       return;
     }
 
     setIsSaving(true);
-
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-      toast.success("Profile saved successfully");
+      toast.success("Profile saved successfully!");
     } catch (error) {
       console.error("Failed to save profile:", error);
-      if (
-        error instanceof DOMException &&
-        error.name === "QuotaExceededError"
-      ) {
-        toast.error(
-          "Storage quota exceeded. Please clear some data to continue.",
-          { duration: 5000 },
-        );
-      } else {
-        toast.error("Failed to save profile");
-      }
+      toast.error("Failed to save profile. Storage might be full.");
     } finally {
       setIsSaving(false);
     }
@@ -96,10 +75,17 @@ export function KYCForm() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-carbon-green-400"></div>
+      <Card className="bg-card/80 backdrop-blur-sm border-border">
+        <CardHeader className="px-8 py-6">
+          <Skeleton className="h-7 w-1/2" />
+          <Skeleton className="h-4 w-3/4 mt-2" />
+        </CardHeader>
+        <CardContent className="p-8 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
           </div>
         </CardContent>
       </Card>
@@ -108,38 +94,21 @@ export function KYCForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* KYC Status Card */}
-      <Card className="border-carbon-green-700 bg-carbon-green-950/30">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>KYC Status</CardTitle>
-              <CardDescription>
-                Your account verification status
-              </CardDescription>
-            </div>
-            <Badge className="bg-carbon-green-500/20 text-carbon-green-400 border-carbon-green-700">
-              <CheckCircle className="w-4 h-4 mr-1" />
-              Demo Account — KYC Approved
-            </Badge>
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Profile Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile Information</CardTitle>
-          <CardDescription>
-            Update your personal and organization details
+      <Card className="bg-card/80 backdrop-blur-sm border-border hover-lift">
+        <CardHeader className="border-b border-border px-8 py-6">
+          <CardTitle className="heading-display text-2xl text-white">
+            Identity & Organization
+          </CardTitle>
+          <CardDescription className="text-base">
+            Update your personal and organization details for KYC verification
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label
                 htmlFor="name"
-                className="text-sm font-medium text-gray-200"
+                className="text-xs font-medium text-muted-foreground uppercase tracking-wider"
               >
                 Full Name
               </label>
@@ -150,13 +119,13 @@ export function KYCForm() {
                 placeholder="Enter your full name"
                 required
                 maxLength={100}
+                className="bg-input border-border h-12 text-base"
               />
             </div>
-
             <div className="space-y-2">
               <label
                 htmlFor="email"
-                className="text-sm font-medium text-gray-200"
+                className="text-xs font-medium text-muted-foreground uppercase tracking-wider"
               >
                 Email Address
               </label>
@@ -168,13 +137,13 @@ export function KYCForm() {
                 placeholder="Enter your email"
                 required
                 maxLength={100}
+                className="bg-input border-border h-12 text-base"
               />
             </div>
-
             <div className="space-y-2">
               <label
                 htmlFor="organization"
-                className="text-sm font-medium text-gray-200"
+                className="text-xs font-medium text-muted-foreground uppercase tracking-wider"
               >
                 Organization
               </label>
@@ -184,13 +153,13 @@ export function KYCForm() {
                 onChange={(e) => handleChange("organization", e.target.value)}
                 placeholder="Enter your organization"
                 maxLength={100}
+                className="bg-input border-border h-12 text-base"
               />
             </div>
-
             <div className="space-y-2">
               <label
                 htmlFor="country"
-                className="text-sm font-medium text-gray-200"
+                className="text-xs font-medium text-muted-foreground uppercase tracking-wider"
               >
                 Country
               </label>
@@ -200,58 +169,22 @@ export function KYCForm() {
                 onChange={(e) => handleChange("country", e.target.value)}
                 placeholder="Enter your country"
                 maxLength={100}
+                className="bg-input border-border h-12 text-base"
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* API Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>API Settings</CardTitle>
-          <CardDescription>
-            Configure your CAD Trust API key for live data access
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label
-              htmlFor="apiKey"
-              className="text-sm font-medium text-gray-200"
-            >
-              CAD Trust API Key
-            </label>
-            <Input
-              id="apiKey"
-              type="password"
-              value={profile.cadTrustApiKey || ""}
-              onChange={(e) => handleChange("cadTrustApiKey", e.target.value)}
-              placeholder="Enter your API key (optional)"
-              maxLength={200}
-            />
-            <p className="text-xs text-gray-500">
-              API key is optional. The platform will use demo data if no key is
-              provided.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Save Button */}
       <div className="flex justify-end">
-        <Button type="submit" disabled={isSaving} size="lg">
-          {isSaving ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              Save Profile
-            </>
-          )}
+        <Button
+          type="submit"
+          disabled={isSaving}
+          size="lg"
+          className="px-8 h-12 text-base font-medium rounded-full hover:scale-105 transition-transform"
+        >
+          {isSaving ? "Saving..." : "Save Profile"}
+          {!isSaving && <Save className="ml-2 h-4 w-4" />}
         </Button>
       </div>
     </form>

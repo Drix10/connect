@@ -12,180 +12,105 @@ import {
   Bot,
   TrendingUp,
   User,
-  Menu,
-  X,
+  PanelLeft,
+  Leaf,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const navigationItems = [
-  {
-    name: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    name: "Verify Credit",
-    href: "/verify",
-    icon: Search,
-  },
-  {
-    name: "Learn",
-    href: "/learn",
-    icon: BookOpen,
-  },
-  {
-    name: "Onboarding",
-    href: "/onboarding",
-    icon: UserPlus,
-  },
-  {
-    name: "AI MRV",
-    href: "/ai-mrv",
-    icon: Bot,
-  },
-  {
-    name: "Simulator",
-    href: "/simulator",
-    icon: TrendingUp,
-  },
-  {
-    name: "Profile",
-    href: "/profile",
-    icon: User,
-  },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Verify Credit", href: "/verify", icon: Search },
+  { name: "Simulator", href: "/simulator", icon: TrendingUp },
+  { name: "AI MRV", href: "/ai-mrv", icon: Bot },
+  { name: "Learn", href: "/learn", icon: BookOpen },
+  { name: "Onboarding", href: "/onboarding", icon: UserPlus },
+  { name: "Profile", href: "/profile", icon: User },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
-  // Check if mobile on mount and window resize
   useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (mobile) {
-        setIsCollapsed(true);
-      }
+    const checkScreenWidth = () => {
+      setIsCollapsed(window.innerWidth < 1024);
     };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    // Cleanup event listener on unmount
-    return () => {
-      window.removeEventListener("resize", checkMobile);
-    };
+    checkScreenWidth();
+    window.addEventListener("resize", checkScreenWidth);
+    return () => window.removeEventListener("resize", checkScreenWidth);
   }, []);
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
   return (
-    <>
-      {/* Mobile overlay */}
-      {isMobile && !isCollapsed && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={toggleSidebar}
-        />
+    <aside
+      className={cn(
+        "hidden lg:flex flex-col h-screen glass border-r border-border/40 transition-all duration-300 ease-in-out relative z-20",
+        isCollapsed ? "w-20" : "w-72",
       )}
-
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          "fixed left-0 top-0 z-50 h-screen bg-card border-r border-border transition-all duration-300 ease-in-out",
-          isCollapsed ? "w-0 md:w-16" : "w-64",
-          isMobile && isCollapsed && "w-0",
-        )}
-      >
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-border">
-            {!isCollapsed && (
-              <Link href="/dashboard" className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-lg bg-carbon-green flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">CT</span>
-                </div>
-                <span className="font-semibold text-foreground">
-                  Carbon Trade X
-                </span>
-              </Link>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className={cn(
-                "text-muted-foreground hover:text-foreground",
-                isCollapsed && "mx-auto",
-              )}
-            >
-              {isCollapsed ? (
-                <Menu className="h-5 w-5" />
-              ) : (
-                <X className="h-5 w-5" />
-              )}
-            </Button>
+    >
+      <div className="flex items-center h-20 px-6 border-b border-border/40">
+        <Link
+          href="/"
+          className="flex items-center space-x-3 overflow-hidden group"
+        >
+          <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+            <Leaf className="h-6 w-6 text-primary" strokeWidth={1.5} />
           </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto py-4">
-            <ul className="space-y-1 px-2">
-              {navigationItems.map((item) => {
-                const isActive = pathname === item.href;
-                const Icon = item.icon;
-
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors",
-                        "hover:bg-accent hover:text-accent-foreground",
-                        isActive
-                          ? "bg-carbon-green text-white hover:bg-carbon-green/90"
-                          : "text-muted-foreground",
-                        isCollapsed && "justify-center",
-                      )}
-                      onClick={() => {
-                        if (isMobile) {
-                          setIsCollapsed(true);
-                        }
-                      }}
-                    >
-                      <Icon className="h-5 w-5 flex-shrink-0" />
-                      {!isCollapsed && (
-                        <span className="font-medium">{item.name}</span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-
-          {/* Footer */}
           {!isCollapsed && (
-            <div className="p-4 border-t border-border">
-              <div className="text-xs text-muted-foreground text-center">
-                <p>Demo Mode</p>
-                <p className="mt-1">Data stored locally</p>
-              </div>
-            </div>
+            <span className="heading-display text-xl text-white whitespace-nowrap">
+              Carbon Trade X
+            </span>
           )}
-        </div>
-      </aside>
+        </Link>
+      </div>
 
-      {/* Spacer for main content */}
-      <div
-        className={cn(
-          "transition-all duration-300",
-          isCollapsed ? "md:ml-16" : "md:ml-64",
-        )}
-      />
-    </>
+      <nav className="flex-1 overflow-y-auto py-6">
+        <ul className="space-y-2 px-4">
+          {navigationItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center space-x-3 px-4 py-3 rounded-xl transition-all",
+                    "hover:bg-primary/5",
+                    isActive
+                      ? "bg-primary/10 text-white border-l-2 border-primary"
+                      : "text-muted-foreground hover:text-white",
+                    isCollapsed && "justify-center",
+                  )}
+                >
+                  <item.icon
+                    className="h-5 w-5 flex-shrink-0"
+                    strokeWidth={1.5}
+                  />
+                  {!isCollapsed && (
+                    <span className="font-medium text-sm">{item.name}</span>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      <div className="p-4 border-t border-border/40">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="w-full text-muted-foreground hover:text-foreground hover:bg-primary/5"
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <PanelLeft
+            className={cn(
+              "h-5 w-5 transition-transform duration-300",
+              !isCollapsed && "rotate-180",
+            )}
+            strokeWidth={1.5}
+          />
+        </Button>
+      </div>
+    </aside>
   );
 }

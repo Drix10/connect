@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { ShoppingCart, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,19 +13,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CarbonCredit } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface MarketplaceTableProps {
   credits: CarbonCredit[];
   onBuy: (creditId: string) => void;
   onSelectCredit: (creditId: string) => void;
+  selectedCreditId: string | null;
 }
 
-type SortField = "price" | "volume" | "qualityScore";
+type SortField = "pricePerTonne" | "volume" | "qualityScore";
 
 export function MarketplaceTable({
   credits,
   onBuy,
   onSelectCredit,
+  selectedCreditId,
 }: MarketplaceTableProps) {
   const [sortField, setSortField] = useState<SortField>("qualityScore");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -41,96 +43,86 @@ export function MarketplaceTable({
   };
 
   const sortedCredits = [...credits].sort((a, b) => {
-    let aValue: number, bValue: number;
-
-    switch (sortField) {
-      case "price":
-        aValue = a.pricePerTonne;
-        bValue = b.pricePerTonne;
-        break;
-      case "volume":
-        aValue = a.volume;
-        bValue = b.volume;
-        break;
-      case "qualityScore":
-        aValue = a.qualityScore;
-        bValue = b.qualityScore;
-        break;
-    }
-
+    const aValue = a[sortField];
+    const bValue = b[sortField];
     return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
   });
 
   const getQualityColor = (score: number) => {
-    if (score >= 85)
-      return "bg-carbon-green-500/20 text-carbon-green-400 border-carbon-green-700";
-    if (score >= 70) return "bg-blue-500/20 text-blue-400 border-blue-700";
-    if (score >= 50)
-      return "bg-yellow-500/20 text-yellow-400 border-yellow-700";
-    return "bg-red-500/20 text-red-400 border-red-700";
+    if (score >= 90) return "accent";
+    if (score >= 80) return "default";
+    if (score >= 70) return "secondary";
+    return "destructive";
   };
 
   return (
-    <div className="rounded-lg border border-gray-800 overflow-hidden">
+    <div className="rounded-lg border border-border overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="bg-gray-900/50 hover:bg-gray-900/50">
-            <TableHead>Registry ID</TableHead>
-            <TableHead>Project Name</TableHead>
+          <TableRow className="bg-background/50 hover:bg-background/50 border-b-border">
+            <TableHead>Project</TableHead>
             <TableHead>
-              <button
-                onClick={() => handleSort("price")}
-                className="flex items-center gap-1 hover:text-carbon-green-400 transition-colors"
+              <Button
+                variant="ghost"
+                onClick={() => handleSort("pricePerTonne")}
+                className="px-0"
               >
-                Price (₹/tCO₂e)
-                <ArrowUpDown className="w-4 h-4" />
-              </button>
+                Price <ArrowUpDown className="w-4 h-4 ml-2" />
+              </Button>
             </TableHead>
             <TableHead>
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => handleSort("volume")}
-                className="flex items-center gap-1 hover:text-carbon-green-400 transition-colors"
+                className="px-0"
               >
-                Volume (tCO₂e)
-                <ArrowUpDown className="w-4 h-4" />
-              </button>
+                Volume <ArrowUpDown className="w-4 h-4 ml-2" />
+              </Button>
             </TableHead>
             <TableHead>
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => handleSort("qualityScore")}
-                className="flex items-center gap-1 hover:text-carbon-green-400 transition-colors"
+                className="px-0"
               >
-                Quality Score
-                <ArrowUpDown className="w-4 h-4" />
-              </button>
+                Quality <ArrowUpDown className="w-4 h-4 ml-2" />
+              </Button>
             </TableHead>
             <TableHead className="text-right">Action</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedCredits.map((credit, index) => (
-            <motion.tr
+          {sortedCredits.map((credit) => (
+            <TableRow
               key={credit.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="border-b border-gray-800 hover:bg-gray-900/30 transition-colors cursor-pointer"
+              className={cn(
+                "border-b-border hover:bg-background/30 transition-colors cursor-pointer",
+                selectedCreditId === credit.id && "bg-primary/10",
+              )}
               onClick={() => onSelectCredit(credit.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onSelectCredit(credit.id);
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label={`Select ${credit.projectName}`}
             >
-              <TableCell className="font-medium text-carbon-green-400">
-                {credit.registryId}
-              </TableCell>
-              <TableCell className="max-w-xs truncate">
-                {credit.projectName}
+              <TableCell>
+                <div className="font-medium text-foreground">
+                  {credit.projectName}
+                </div>
+                <div className="text-sm text-foreground/80">
+                  {credit.registryId}
+                </div>
               </TableCell>
               <TableCell>₹{credit.pricePerTonne.toLocaleString()}</TableCell>
               <TableCell>{credit.volume.toLocaleString()}</TableCell>
               <TableCell>
-                <Badge
-                  variant="outline"
-                  className={getQualityColor(credit.qualityScore)}
-                >
-                  {credit.qualityScore}/100
+                <Badge variant={getQualityColor(credit.qualityScore)}>
+                  {credit.qualityScore}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
@@ -140,20 +132,28 @@ export function MarketplaceTable({
                     e.stopPropagation();
                     onBuy(credit.id);
                   }}
-                  className="gap-2"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onBuy(credit.id);
+                    }
+                  }}
+                  className="gap-2 bg-primary/90 hover:bg-primary text-primary-foreground"
+                  aria-label={`Buy ${credit.projectName}`}
                 >
                   <ShoppingCart className="w-4 h-4" />
                   Buy
                 </Button>
               </TableCell>
-            </motion.tr>
+            </TableRow>
           ))}
         </TableBody>
       </Table>
 
       {sortedCredits.length === 0 && (
-        <div className="p-8 text-center text-gray-500">
-          No credits available in marketplace
+        <div className="p-8 text-center text-foreground/60">
+          No credits available in the marketplace.
         </div>
       )}
     </div>

@@ -176,11 +176,21 @@ export function OnboardingChecklist({ registry }: OnboardingChecklistProps) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="success-title"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setShowSuccess(false);
+              }
+            }}
+            tabIndex={-1}
           >
             <motion.div
               initial={{ y: 50 }}
               animate={{ y: 0 }}
               className="bg-gradient-to-br from-carbon-green-900 to-carbon-green-950 p-8 rounded-2xl shadow-2xl border border-carbon-green-700"
+              role="document"
             >
               <motion.div
                 initial={{ scale: 0 }}
@@ -192,13 +202,23 @@ export function OnboardingChecklist({ registry }: OnboardingChecklistProps) {
                   <CheckCircle2 className="w-12 h-12 text-carbon-green-400" />
                 </div>
                 <div className="text-center">
-                  <h3 className="text-2xl font-bold text-carbon-green-400 mb-2">
+                  <h3
+                    id="success-title"
+                    className="text-2xl font-bold text-carbon-green-400 mb-2"
+                  >
                     Submission Successful!
                   </h3>
                   <p className="text-gray-300">
                     Your {registryName} onboarding has been submitted
                   </p>
                 </div>
+                <Button
+                  onClick={() => setShowSuccess(false)}
+                  className="mt-4"
+                  autoFocus
+                >
+                  Close
+                </Button>
               </motion.div>
             </motion.div>
           </motion.div>

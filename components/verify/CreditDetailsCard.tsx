@@ -9,6 +9,10 @@ import {
   Calendar,
   FileText,
   ExternalLink,
+  Building,
+  Scale,
+  BarChart,
+  Info,
 } from "lucide-react";
 import type { CADTrustProject } from "@/lib/types";
 
@@ -24,13 +28,11 @@ export function CreditDetailsCard({
   const getRegistryUrl = (registry: string, originId: string) => {
     const registryLower = registry.toLowerCase();
     if (registryLower.includes("verra")) {
-      return `https://registry.verra.org/app/projectDetail/VCS/${originId}`;
-    } else if (registryLower.includes("gold")) {
-      return `https://registry.goldstandard.org/projects/details/${originId}`;
-    } else if (registryLower.includes("ccts")) {
-      return `https://ccts.gov.in/project/${originId}`;
+      return `https://registry.verra.org/app/projectDetail/VCS/${originId.replace("VCS-", "")}`;
+    } else if (registryLower.includes("goldstandard")) {
+      return `https://registry.goldstandard.org/projects/details/${originId.replace("GS-", "")}`;
     }
-    return null;
+    return project.projectLink || null;
   };
 
   const registryUrl = getRegistryUrl(
@@ -38,128 +40,123 @@ export function CreditDetailsCard({
     project.originProjectId,
   );
 
+  const DetailItem = ({
+    icon: Icon,
+    label,
+    value,
+  }: {
+    icon: React.ElementType;
+    label: string;
+    value: React.ReactNode;
+  }) => (
+    <div className="flex items-start gap-3">
+      <div className="p-2 rounded-lg bg-primary/10 mt-0.5">
+        <Icon className="h-4 w-4 text-primary" strokeWidth={1.5} />
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+          {label}
+        </p>
+        <p className="text-white font-medium">{value}</p>
+      </div>
+    </div>
+  );
+
   return (
-    <Card className="bg-gray-900 border-gray-800">
-      <CardHeader>
-        <div className="flex items-start justify-between">
+    <Card className="bg-card/80 backdrop-blur-sm border-border hover-lift">
+      <CardHeader className="border-b border-border px-8 py-6">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <CardTitle className="text-2xl text-white mb-2">
+            <CardTitle className="heading-display text-3xl text-white mb-3">
               {project.projectName}
             </CardTitle>
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="border-primary text-primary">
+              <Badge
+                variant="outline"
+                className="border-primary/50 text-primary text-xs px-3 py-1"
+              >
                 {project.registryOfOrigin}
               </Badge>
               <Badge
-                variant="outline"
-                className={
-                  dataSource === "live"
-                    ? "border-green-500 text-green-500"
-                    : "border-yellow-500 text-yellow-500"
-                }
+                variant={dataSource === "live" ? "default" : "secondary"}
+                className="text-xs px-3 py-1"
               >
-                {dataSource === "live"
-                  ? "Live from CAD Trust Data Model 2.0"
-                  : "Demo Data"}
+                {dataSource === "live" ? "Live Data" : "Demo Data"}
               </Badge>
             </div>
           </div>
-          <CheckCircle2 className="h-8 w-8 text-primary flex-shrink-0" />
+          <div className="p-3 rounded-xl bg-primary/10">
+            <CheckCircle2 className="h-7 w-7 text-primary" strokeWidth={2} />
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
-              <div>
-                <p className="text-sm text-gray-400">Location</p>
-                <p className="text-white font-medium">{project.location}</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <FileText className="h-5 w-5 text-gray-400 mt-0.5" />
-              <div>
-                <p className="text-sm text-gray-400">Methodology</p>
-                <p className="text-white font-medium">{project.methodology}</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Calendar className="h-5 w-5 text-gray-400 mt-0.5" />
-              <div>
-                <p className="text-sm text-gray-400">Validation Date</p>
-                <p className="text-white font-medium">
-                  {project.validationDate}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-400 mb-1">Project Type</p>
-              <p className="text-white font-medium">{project.projectType}</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-400 mb-1">Project Scale</p>
-              <p className="text-white font-medium">{project.projectScale}</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-400 mb-1">
-                Estimated Annual Emission Reductions
-              </p>
-              <p className="text-white font-medium">
-                {project.estimatedAnnualEmissionReductions.toLocaleString()}{" "}
-                tCO₂e
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-400 mb-1">Validation Body</p>
-              <p className="text-white font-medium">{project.validationBody}</p>
-            </div>
-          </div>
+      <CardContent className="p-8 space-y-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <DetailItem icon={MapPin} label="Location" value={project.location} />
+          <DetailItem
+            icon={FileText}
+            label="Methodology"
+            value={project.methodology}
+          />
+          <DetailItem
+            icon={Calendar}
+            label="Validation Date"
+            value={project.validationDate}
+          />
+          <DetailItem
+            icon={Info}
+            label="Project Type"
+            value={project.projectType}
+          />
+          <DetailItem
+            icon={Scale}
+            label="Project Scale"
+            value={project.projectScale}
+          />
+          <DetailItem
+            icon={Building}
+            label="Validation Body"
+            value={project.validationBody}
+          />
         </div>
 
-        <div className="pt-4 border-t border-gray-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-400 mb-1">Registry ID</p>
-              <p className="text-white font-medium">
-                {project.originProjectId}
-              </p>
-            </div>
+        <div className="glass rounded-2xl p-6">
+          <DetailItem
+            icon={BarChart}
+            label="Estimated Annual Emission Reductions"
+            value={
+              typeof project.estimatedAnnualEmissionReductions === "number"
+                ? `${project.estimatedAnnualEmissionReductions.toLocaleString()} tCO₂e`
+                : "—"
+            }
+          />
+        </div>
+
+        <div className="pt-6 border-t border-border">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <DetailItem
+              icon={Info}
+              label="Registry ID"
+              value={project.originProjectId}
+            />
             {registryUrl && (
-              <Button variant="outline" asChild>
+              <Button
+                variant="outline"
+                asChild
+                className="border-border hover:bg-muted/50 rounded-full px-6"
+              >
                 <a
                   href={registryUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2"
                 >
-                  View Full Registry
-                  <ExternalLink className="h-4 w-4" />
+                  View on Registry <ExternalLink className="h-4 w-4" />
                 </a>
               </Button>
             )}
           </div>
         </div>
-
-        {project.projectStatus && (
-          <div className="bg-gray-950 rounded-lg p-4">
-            <p className="text-sm text-gray-400 mb-1">Project Status</p>
-            <p className="text-white font-medium">{project.projectStatus}</p>
-            {project.projectStatusDate && (
-              <p className="text-xs text-gray-500 mt-1">
-                As of {project.projectStatusDate}
-              </p>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );

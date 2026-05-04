@@ -2,6 +2,7 @@
 
 import React from "react";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { AuthProvider } from "./AuthProvider";
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -9,8 +10,12 @@ interface ProvidersProps {
 
 /**
  * Providers component to wrap the application with necessary context providers
- * Currently includes ErrorBoundary, can be extended with other providers as needed
+ * Includes ErrorBoundary and AuthProvider for authentication state management
  */
 export function Providers({ children }: ProvidersProps) {
-  return <ErrorBoundary>{children}</ErrorBoundary>;
+  return (
+    <ErrorBoundary>
+      <AuthProvider>{children}</AuthProvider>
+    </ErrorBoundary>
+  );
 }

@@ -1,15 +1,66 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  useState,
+  useEffect,
+  lazy,
+  Suspense,
+  Component,
+  ReactNode,
+} from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { MarketplaceTable } from "./MarketplaceTable";
 import { PortfolioDisplay } from "./PortfolioDisplay";
-import { PriceChart } from "./PriceChart";
 import { Portfolio, CarbonCredit, PriceHistoryPoint } from "@/lib/types";
 import { buyCredit, sellCredit } from "@/lib/utils/transactions";
-import { getMockCredits } from "@/lib/mock-data/credits";
-import { getMockPriceHistory } from "@/lib/mock-data/priceHistory";
+import { getDemoCredits } from "@/lib/demo-data/credits";
+import { getDemoPriceHistory } from "@/lib/demo-data/priceHistory";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertCircle } from "lucide-react";
+
+// FIXED: Error boundary for lazy-loaded components
+class ChartErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error("Chart loading error:", error);
+    toast.error("Failed to load price chart");
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="h-[250px] flex flex-col items-center justify-center gap-3 text-muted-foreground">
+          <AlertCircle className="h-8 w-8" />
+          <p className="text-sm">Failed to load chart</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// Lazy load the heavy PriceChart component (recharts is ~1000 modules)
+const PriceChart = lazy(() =>
+  import("./PriceChart").then((mod) => ({ default: mod.PriceChart })),
+);
 
 const STORAGE_KEY = "carbon-trade-x:portfolio";
 
@@ -25,153 +76,162 @@ export function SimulatorContainer() {
   const [selectedCreditId, setSelectedCreditId] = useState<string | null>(null);
   const [priceHistory, setPriceHistory] = useState<PriceHistoryPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
 
-  // Load portfolio from localStorage on mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const loadedPortfolio: Portfolio = JSON.parse(stored);
-        setPortfolio(loadedPortfolio);
+        setPortfolio(JSON.parse(stored));
+      }
+      const allCredits = getDemoCredits();
+      setMarketplaceCredits(allCredits);
+
+      if (allCredits.length > 0) {
+        const firstCreditId = allCredits[0].id;
+        setSelectedCreditId(firstCreditId);
+        setPriceHistory(getDemoPriceHistory(firstCreditId));
       }
     } catch (error) {
-      console.error("Failed to load portfolio:", error);
-      toast.error("Failed to load portfolio from storage");
+      console.error("Failed to initialize simulator:", error);
+      toast.error("Failed to load simulator data.");
+    } finally {
+      setIsLoading(false);
     }
-
-    // Load marketplace credits
-    const allCredits = getMockCredits();
-    setMarketplaceCredits(allCredits);
-    setIsLoading(false);
   }, []);
 
-  // Save portfolio to localStorage whenever it changes
   useEffect(() => {
-    if (!isLoading && !isSaving) {
-      setIsSaving(true);
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(portfolio));
-      } catch (error) {
-        console.error("Failed to save portfolio:", error);
-        if (
-          error instanceof DOMException &&
-          error.name === "QuotaExceededError"
-        ) {
-          toast.error(
-            "Storage quota exceeded. Please clear some data to continue.",
-            { duration: 5000 },
-          );
-        } else {
-          toast.error("Failed to save portfolio");
-        }
-      } finally {
-        setIsSaving(false);
-      }
+    if (isLoading) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(portfolio));
+    } catch (error) {
+      console.error("Failed to save portfolio:", error);
+      toast.error("Failed to save portfolio. Storage might be full.");
     }
-  }, [portfolio, isLoading, isSaving]);
-
-  // Update marketplace credits when portfolio changes
-  const availableCredits = marketplaceCredits.filter(
-    (credit) => !portfolio.credits.some((pc) => pc.id === credit.id),
-  );
+  }, [portfolio, isLoading]);
 
   const handleBuy = (creditId: string) => {
-    if (isSaving) {
-      toast.error("Please wait for the previous transaction to complete");
-      return;
-    }
-
     const credit = marketplaceCredits.find((c) => c.id === creditId);
     if (!credit) {
-      toast.error("Credit not found");
+      toast.error("Credit not found in marketplace.");
       return;
     }
-
     try {
-      const updatedPortfolio = buyCredit(credit, portfolio);
-      setPortfolio(updatedPortfolio);
-      toast.success(`Successfully purchased ${credit.registryId}`);
+      setPortfolio(buyCredit(credit, portfolio));
+      toast.success(`Successfully purchased 1 tonne of ${credit.registryId}.`);
     } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("Failed to purchase credit");
-      }
+      toast.error(
+        error instanceof Error ? error.message : "Failed to purchase credit.",
+      );
     }
   };
 
   const handleSell = (creditId: string) => {
-    if (isSaving) {
-      toast.error("Please wait for the previous transaction to complete");
-      return;
-    }
-
     const credit = portfolio.credits.find((c) => c.id === creditId);
     if (!credit) {
-      toast.error("Credit not found in portfolio");
+      toast.error("Credit not found in your portfolio.");
       return;
     }
-
     try {
-      const updatedPortfolio = sellCredit(creditId, portfolio);
-      setPortfolio(updatedPortfolio);
-      toast.success(`Successfully sold ${credit.registryId}`);
+      setPortfolio(sellCredit(creditId, portfolio));
+      toast.success(`Successfully sold 1 tonne of ${credit.registryId}.`);
     } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("Failed to sell credit");
-      }
+      toast.error(
+        error instanceof Error ? error.message : "Failed to sell credit.",
+      );
     }
   };
 
   const handleSelectCredit = (creditId: string) => {
     setSelectedCreditId(creditId);
-    const history = getMockPriceHistory(creditId);
-    setPriceHistory(history);
+    setPriceHistory(getDemoPriceHistory(creditId));
   };
 
   const selectedCredit = marketplaceCredits.find(
     (c) => c.id === selectedCreditId,
   );
+  const availableCredits = marketplaceCredits.filter(
+    (credit) => !portfolio.credits.some((pc) => pc.id === credit.id),
+  );
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-carbon-green-400"></div>
+      <div className="space-y-6">
+        <Skeleton className="h-96 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Tabs defaultValue="marketplace" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
-          <TabsTrigger value="portfolio">
-            Portfolio ({portfolio.credits.length})
-          </TabsTrigger>
-        </TabsList>
+    <div className="grid lg:grid-cols-3 gap-6">
+      {/* Marketplace - Takes 2 columns */}
+      <div className="lg:col-span-2">
+        <Card className="bg-card/80 backdrop-blur-sm border-border hover-lift">
+          <CardHeader className="border-b border-border px-8 py-6">
+            <CardTitle className="heading-display text-2xl text-white">
+              Marketplace
+            </CardTitle>
+            <CardDescription className="text-base">
+              Browse and purchase verified carbon credits
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-8">
+            <MarketplaceTable
+              credits={availableCredits}
+              onBuy={handleBuy}
+              onSelectCredit={handleSelectCredit}
+              selectedCreditId={selectedCreditId}
+            />
+          </CardContent>
+        </Card>
+      </div>
 
-        <TabsContent value="marketplace" className="space-y-6">
-          <MarketplaceTable
-            credits={availableCredits}
-            onBuy={handleBuy}
-            onSelectCredit={handleSelectCredit}
-          />
+      {/* Right sidebar - Price Chart and Portfolio */}
+      <div className="space-y-6">
+        {/* Price Chart */}
+        <Card className="bg-card/80 backdrop-blur-sm border-border hover-lift">
+          <CardHeader className="border-b border-border px-6 py-5">
+            <CardTitle className="heading-display text-xl text-white">
+              Price Chart
+            </CardTitle>
+            <CardDescription className="truncate text-sm">
+              {selectedCredit?.projectName ||
+                "Select a credit to view price history"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <ChartErrorBoundary>
+              <Suspense
+                fallback={
+                  <div className="h-[250px] flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                }
+              >
+                <PriceChart
+                  creditId={selectedCreditId}
+                  priceHistory={priceHistory}
+                />
+              </Suspense>
+            </ChartErrorBoundary>
+          </CardContent>
+        </Card>
 
-          <PriceChart
-            creditId={selectedCreditId}
-            priceHistory={priceHistory}
-            creditName={selectedCredit?.projectName}
-          />
-        </TabsContent>
-
-        <TabsContent value="portfolio">
-          <PortfolioDisplay portfolio={portfolio} onSell={handleSell} />
-        </TabsContent>
-      </Tabs>
+        {/* Portfolio */}
+        <Card className="bg-card/80 backdrop-blur-sm border-border hover-lift">
+          <CardHeader className="border-b border-border px-6 py-5">
+            <CardTitle className="heading-display text-xl text-white">
+              My Portfolio
+            </CardTitle>
+            <CardDescription className="text-sm">
+              Your carbon credit holdings
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <PortfolioDisplay portfolio={portfolio} onSell={handleSell} />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

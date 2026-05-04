@@ -1,12 +1,7 @@
 /**
- * Mock carbon credit data for Carbon Trade X MVP
+ * Demo Carbon Credit Data
  * 
- * This file contains 8 realistic sample carbon credits from three major registries:
- * - 3 Verra VCUs (Verified Carbon Units)
- * - 3 Gold Standard VERs (Verified Emission Reductions)
- * - 2 CCTS CCCs (Carbon Credit Certificates)
- * 
- * Each credit includes complete CADTrustProject structure for realistic demo experience.
+ * Comprehensive demo data for carbon credits from various registries
  */
 
 import { CarbonCredit, CADTrustProject } from "@/lib/types";
@@ -152,7 +147,7 @@ export const goldStandardSolarProject: CADTrustProject = {
     projectLink: "https://registry.goldstandard.org/projects/details/7845",
     projectStatus: "Active",
     projectStatusDate: "2024-02-05",
-    registryOfOrigin: "Gold Standard",
+    registryOfOrigin: "GoldStandard",
     originProjectId: "GS-7845",
     program: "Gold Standard for the Global Goals",
     projectType: "Renewable Energy - Solar Photovoltaic",
@@ -189,7 +184,7 @@ export const goldStandardWindProject: CADTrustProject = {
     projectLink: "https://registry.goldstandard.org/projects/details/6234",
     projectStatus: "Active",
     projectStatusDate: "2023-11-12",
-    registryOfOrigin: "Gold Standard",
+    registryOfOrigin: "GoldStandard",
     originProjectId: "GS-6234",
     program: "Gold Standard for the Global Goals",
     projectType: "Renewable Energy - Wind",
@@ -226,7 +221,7 @@ export const goldStandardWaterProject: CADTrustProject = {
     projectLink: "https://registry.goldstandard.org/projects/details/8921",
     projectStatus: "Active",
     projectStatusDate: "2024-03-01",
-    registryOfOrigin: "Gold Standard",
+    registryOfOrigin: "GoldStandard",
     originProjectId: "GS-8921",
     program: "Gold Standard for the Global Goals",
     projectType: "Water Purification",
@@ -324,9 +319,9 @@ export const cctsEnergyEfficiencyProject: CADTrustProject = {
 // ============================================================================
 
 /**
- * Array of all mock carbon credits
+ * Array of all demo carbon credits
  */
-export const mockCredits: CarbonCredit[] = [
+export const demoCredits: CarbonCredit[] = [
     verraForestryCredit,
     verraRenewableCredit,
     verraCookstovesCredit,
@@ -340,7 +335,7 @@ export const mockCredits: CarbonCredit[] = [
 /**
  * Map of project UIDs to CADTrustProject data
  */
-export const mockProjects: Record<string, CADTrustProject> = {
+export const demoProjects: Record<string, CADTrustProject> = {
     "verra-vcs-934": verraForestryProject,
     "verra-vcs-1764": verraRenewableProject,
     "verra-vcs-2112": verraCookstovesProject,
@@ -354,7 +349,7 @@ export const mockProjects: Record<string, CADTrustProject> = {
 /**
  * Map of registry IDs to CADTrustProject data
  */
-export const mockProjectsByRegistryId: Record<string, CADTrustProject> = {
+export const demoProjectsByRegistryId: Record<string, CADTrustProject> = {
     "VCS-934": verraForestryProject,
     "VCS-1764": verraRenewableProject,
     "VCS-2112": verraCookstovesProject,
@@ -366,29 +361,29 @@ export const mockProjectsByRegistryId: Record<string, CADTrustProject> = {
 };
 
 /**
- * Get mock project by Project UID
+ * Get demo project by Project UID
  */
-export function getMockProject(projectUid: string): CADTrustProject | null {
-    return mockProjects[projectUid] || null;
+export function getDemoProject(projectUid: string): CADTrustProject | null {
+    return demoProjects[projectUid] || null;
 }
 
 /**
- * Get mock credit by registry ID
+ * Get demo credit by registry ID
  */
-export function getMockCredit(registryId: string): CarbonCredit | null {
-    return mockCredits.find((credit) => credit.registryId === registryId) || null;
+export function getDemoCredit(registryId: string): CarbonCredit | null {
+    return demoCredits.find((credit) => credit.registryId === registryId) || null;
 }
 
 /**
- * Get mock project by registry ID
+ * Get demo project by registry ID
  */
-export function getMockProjectByRegistryId(registryId: string): CADTrustProject | null {
-    return mockProjectsByRegistryId[registryId] || null;
+export function getDemoProjectByRegistryId(registryId: string): CADTrustProject | null {
+    return demoProjectsByRegistryId[registryId] || null;
 }
 
 /**
- * Get all mock credits
+ * Get all demo credits
  */
-export function getMockCredits(): CarbonCredit[] {
-    return mockCredits;
+export function getDemoCredits(): CarbonCredit[] {
+    return demoCredits;
 }

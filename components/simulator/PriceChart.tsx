@@ -1,53 +1,32 @@
 "use client";
 
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   LineChart,
   Line,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  CartesianGrid,
 } from "recharts";
 import { PriceHistoryPoint } from "@/lib/types";
 
 interface PriceChartProps {
   creditId: string | null;
   priceHistory: PriceHistoryPoint[];
-  creditName?: string;
 }
 
-export function PriceChart({
-  creditId,
-  priceHistory,
-  creditName,
-}: PriceChartProps) {
+export function PriceChart({ creditId, priceHistory }: PriceChartProps) {
   if (!creditId || priceHistory.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Price History</CardTitle>
-          <CardDescription>30-day price trend</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px] flex items-center justify-center text-gray-500">
-            Select a credit from the marketplace to view price history
-          </div>
-        </CardContent>
-      </Card>
+      <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+        Select a credit to view price history
+      </div>
     );
   }
 
-  // Format data for Recharts
   const chartData = priceHistory.map((point) => ({
-    date: new Date(point.date).toLocaleDateString("en-IN", {
+    date: new Date(point.date).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
     }),
@@ -56,62 +35,58 @@ export function PriceChart({
 
   const minPrice = Math.min(...priceHistory.map((p) => p.price));
   const maxPrice = Math.max(...priceHistory.map((p) => p.price));
-  const priceRange = maxPrice - minPrice;
-  const yAxisMin = Math.floor(minPrice - priceRange * 0.1);
-  const yAxisMax = Math.ceil(maxPrice + priceRange * 0.1);
+  const yAxisDomain = [Math.floor(minPrice * 0.98), Math.ceil(maxPrice * 1.02)];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Price History</CardTitle>
-        <CardDescription>
-          {creditName ? `${creditName} - ` : ""}30-day price trend (₹/tCO₂e)
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart
-            data={chartData}
-            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis
-              dataKey="date"
-              stroke="#9CA3AF"
-              style={{ fontSize: "12px" }}
-              tick={{ fill: "#9CA3AF" }}
-            />
-            <YAxis
-              stroke="#9CA3AF"
-              style={{ fontSize: "12px" }}
-              tick={{ fill: "#9CA3AF" }}
-              domain={[yAxisMin, yAxisMax]}
-              tickFormatter={(value) => `₹${value}`}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#1F2937",
-                border: "1px solid #374151",
-                borderRadius: "8px",
-                color: "#F3F4F6",
-              }}
-              labelStyle={{ color: "#9CA3AF" }}
-              formatter={(value: any) => [
-                `₹${Number(value).toLocaleString()}`,
-                "Price",
-              ]}
-            />
-            <Line
-              type="monotone"
-              dataKey="price"
-              stroke="#10b981"
-              strokeWidth={2}
-              dot={{ fill: "#10b981", r: 3 }}
-              activeDot={{ r: 5 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
+    <div className="h-[250px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={chartData}
+          margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="hsl(var(--border))"
+            opacity={0.3}
+          />
+          <XAxis
+            dataKey="date"
+            stroke="hsl(var(--muted-foreground))"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            stroke="hsl(var(--muted-foreground))"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(value) => `₹${value}`}
+            domain={yAxisDomain}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "hsl(var(--card))",
+              borderColor: "hsl(var(--border))",
+              borderRadius: "8px",
+              color: "hsl(var(--foreground))",
+            }}
+            labelStyle={{ color: "hsl(var(--foreground))" }}
+            formatter={(value) => {
+              const numValue = typeof value === "number" ? value : 0;
+              return [`₹${numValue.toFixed(2)}`, "Price"];
+            }}
+          />
+          <Line
+            type="monotone"
+            dataKey="price"
+            stroke="hsl(var(--primary))"
+            strokeWidth={2}
+            dot={false}
+            activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

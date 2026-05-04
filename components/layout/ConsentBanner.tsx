@@ -57,14 +57,14 @@ export function ConsentBanner() {
             <div className="flex items-start space-x-4">
               {/* Icon */}
               <div className="flex-shrink-0">
-                <div className="w-10 h-10 rounded-full bg-carbon-green/10 flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-carbon-green" />
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Shield className="h-5 w-5 text-primary" strokeWidth={1.5} />
                 </div>
               </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold text-foreground mb-2">
+                <h3 className="heading-display text-lg text-foreground mb-2">
                   Data Privacy Notice (DPDPA Compliance)
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
@@ -82,13 +82,13 @@ export function ConsentBanner() {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                   <Button
                     onClick={handleAccept}
-                    className="bg-carbon-green hover:bg-carbon-green/90 text-white"
+                    className="bg-primary hover:bg-primary/90 text-white"
                   >
                     Accept & Continue
                   </Button>
                   <Link
                     href="/privacy"
-                    className="text-sm text-carbon-green hover:underline"
+                    className="text-sm text-primary hover:underline"
                   >
                     Read Privacy Policy
                   </Link>
