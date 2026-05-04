@@ -69,11 +69,14 @@ export function Navbar() {
               </Button>
             </>
           ) : (
-            <Link href="/login">
-              <Button variant="default" size="sm" className="font-semibold">
-                Login
-              </Button>
-            </Link>
+            <Button
+              variant="default"
+              size="sm"
+              className="font-semibold"
+              asChild
+            >
+              <Link href="/login">Login</Link>
+            </Button>
           )}
         </div>
       </div>

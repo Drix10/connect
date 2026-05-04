@@ -176,16 +176,16 @@ export default function Home() {
               >
                 Markets
               </Link>
-              <Link href="/login">
-                <Button variant="ghost" size="sm" className="text-sm">
-                  Sign in
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button size="sm" className="text-sm font-medium rounded-full">
-                  Get started
-                </Button>
-              </Link>
+              <Button variant="ghost" size="sm" className="text-sm" asChild>
+                <Link href="/login">Sign in</Link>
+              </Button>
+              <Button
+                size="sm"
+                className="text-sm font-medium rounded-full"
+                asChild
+              >
+                <Link href="/register">Get started</Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -396,24 +396,24 @@ export default function Home() {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4 mb-16">
-              <Link href="/register">
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto text-base font-medium rounded-full px-8 hover:scale-105 transition-transform"
-                  style={{ boxShadow: "0 0 30px rgba(0,232,122,0.2)" }}
-                >
+              <Button
+                size="lg"
+                className="w-full sm:w-auto text-base font-medium rounded-full px-8 hover:scale-105 transition-transform"
+                style={{ boxShadow: "0 0 30px rgba(0,232,122,0.2)" }}
+                asChild
+              >
+                <Link href="/register">
                   Open account <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-full sm:w-auto text-base rounded-full px-8 hover:bg-primary/5 hover:border-primary/30 transition-all"
-                >
-                  Live demo
-                </Button>
-              </Link>
+                </Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto text-base rounded-full px-8 hover:bg-primary/5 hover:border-primary/30 transition-all"
+                asChild
+              >
+                <Link href="/dashboard">Live demo</Link>
+              </Button>
             </div>
 
             {/* Stats row */}
@@ -452,9 +452,9 @@ export default function Home() {
         <div className="ticker-move flex w-max">
           {[0, 1].map((pass) => (
             <div key={pass} className="flex">
-              {TICKERS.map(({ label, price, up, pct }) => (
+              {TICKERS.map(({ label, price, up, pct }, index) => (
                 <div
-                  key={`${pass}-${label}`}
+                  key={`${pass}-${index}-${label}`}
                   className="flex items-center gap-3 px-7 border-r border-border"
                 >
                   <span className="text-xs text-muted-foreground tracking-wide">
@@ -728,24 +728,24 @@ export default function Home() {
             Join 1,000+ institutions on the platform. Free to open an account.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/register">
-              <Button
-                size="lg"
-                className="text-base font-medium rounded-full px-10 hover:scale-105 transition-transform"
-                style={{ boxShadow: "0 0 40px rgba(0,232,122,0.2)" }}
-              >
+            <Button
+              size="lg"
+              className="text-base font-medium rounded-full px-10 hover:scale-105 transition-transform"
+              style={{ boxShadow: "0 0 40px rgba(0,232,122,0.2)" }}
+              asChild
+            >
+              <Link href="/register">
                 Create free account <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-base rounded-full px-10 hover:bg-primary/5 hover:border-primary/30 transition-all"
-              >
-                Schedule a demo
-              </Button>
-            </Link>
+              </Link>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="text-base rounded-full px-10 hover:bg-primary/5 hover:border-primary/30 transition-all"
+              asChild
+            >
+              <Link href="/dashboard">Schedule a demo</Link>
+            </Button>
           </div>
         </div>
       </section>

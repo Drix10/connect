@@ -76,6 +76,7 @@ export function SimulatorContainer() {
   const [selectedCreditId, setSelectedCreditId] = useState<string | null>(null);
   const [priceHistory, setPriceHistory] = useState<PriceHistoryPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isTransacting, setIsTransacting] = useState(false); // FIXED: Add transaction lock
 
   useEffect(() => {
     try {
@@ -110,34 +111,54 @@ export function SimulatorContainer() {
   }, [portfolio, isLoading]);
 
   const handleBuy = (creditId: string) => {
+    // FIXED: Prevent race conditions with transaction lock
+    if (isTransacting) {
+      toast.error("Please wait for the current transaction to complete");
+      return;
+    }
+
     const credit = marketplaceCredits.find((c) => c.id === creditId);
     if (!credit) {
       toast.error("Credit not found in marketplace.");
       return;
     }
+
+    setIsTransacting(true);
     try {
-      setPortfolio(buyCredit(credit, portfolio));
+      setPortfolio((prevPortfolio) => buyCredit(credit, prevPortfolio));
       toast.success(`Successfully purchased 1 tonne of ${credit.registryId}.`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to purchase credit.",
       );
+    } finally {
+      setIsTransacting(false);
     }
   };
 
   const handleSell = (creditId: string) => {
+    // FIXED: Prevent race conditions with transaction lock
+    if (isTransacting) {
+      toast.error("Please wait for the current transaction to complete");
+      return;
+    }
+
     const credit = portfolio.credits.find((c) => c.id === creditId);
     if (!credit) {
       toast.error("Credit not found in your portfolio.");
       return;
     }
+
+    setIsTransacting(true);
     try {
-      setPortfolio(sellCredit(creditId, portfolio));
+      setPortfolio((prevPortfolio) => sellCredit(creditId, prevPortfolio));
       toast.success(`Successfully sold 1 tonne of ${credit.registryId}.`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to sell credit.",
       );
+    } finally {
+      setIsTransacting(false);
     }
   };
 

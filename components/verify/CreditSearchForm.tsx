@@ -18,11 +18,13 @@ export function CreditSearchForm({
   const [query, setQuery] = useState("");
   const [searchError, setSearchError] = useState<string | null>(null);
 
-  // FIXED: Sanitize input to prevent XSS
+  // FIXED: Enhanced sanitization to prevent XSS
   const sanitizeInput = (input: string): string => {
     return input
       .trim()
-      .replace(/[<>]/g, "") // Remove potential HTML tags
+      .replace(/[<>'"]/g, "") // Remove HTML tags and quotes
+      .replace(/javascript:/gi, "") // Remove javascript: protocol
+      .replace(/on\w+=/gi, "") // Remove event handlers like onclick=
       .replace(/[^\w\s-]/g, "") // Only allow alphanumeric, spaces, and hyphens
       .slice(0, 200); // Enforce max length
   };

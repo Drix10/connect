@@ -37,7 +37,6 @@ export default function RegisterPage() {
   const router = useRouter();
   const { register, isLoading, isAuthenticated } = useAuth();
   const isMounted = useRef(true);
-  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -68,9 +67,6 @@ export default function RegisterPage() {
     isMounted.current = true;
     return () => {
       isMounted.current = false;
-      if (redirectTimeoutRef.current) {
-        clearTimeout(redirectTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -89,8 +85,10 @@ export default function RegisterPage() {
 
   const validateEmail = (email: string): string => {
     if (!email.trim()) return "Email is required";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      return "Invalid email address";
+    // More robust email validation
+    const emailRegex =
+      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    if (!emailRegex.test(email)) return "Invalid email address";
     return "";
   };
 
