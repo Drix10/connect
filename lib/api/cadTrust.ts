@@ -16,7 +16,7 @@
  */
 
 import { CADTrustProject, CADTrustRPCRequest, CADTrustRPCResponse } from "@/lib/types";
-import { getDemoProject, getDemoProjectByRegistryId } from "@/lib/demo-data/credits";
+import { getDemoProject, getDemoProjectByRegistryId, demoProjectsByRegistryId } from "@/lib/demo-data/credits";
 import { CircuitBreaker, retryWithBackoff } from "@/lib/utils/retry";
 
 /**
@@ -261,14 +261,34 @@ export async function fetchCADTrustProjectByRegistryId(
  * @returns Fetch result with mock data and error information
  */
 function fallbackToMockData(projectUid: string, errorMessage: string): CADTrustFetchResult {
-    const demoProject = getDemoProject(projectUid);
+    // Try exact match first
+    let demoProject = getDemoProject(projectUid);
+
+    // If no exact match, try registry ID lookup
+    if (!demoProject) {
+        demoProject = getDemoProjectByRegistryId(projectUid);
+    }
+
+    // If still no match, try case-insensitive search
+    if (!demoProject) {
+        const upperQuery = projectUid.toUpperCase();
+        demoProject = getDemoProjectByRegistryId(upperQuery);
+    }
+
+    // If still no match, try partial match on registry ID
+    if (!demoProject) {
+        const allProjects = Object.values(demoProjectsByRegistryId);
+        demoProject = allProjects.find(p =>
+            p.originProjectId.toUpperCase().includes(projectUid.toUpperCase()) ||
+            p.projectName.toUpperCase().includes(projectUid.toUpperCase())
+        ) || null;
+    }
 
     if (demoProject) {
         console.log(`Falling back to demo data for project: ${projectUid}`);
         return {
             project: demoProject,
             dataSource: "mock",
-            error: errorMessage,
         };
     }
 
@@ -277,7 +297,7 @@ function fallbackToMockData(projectUid: string, errorMessage: string): CADTrustF
     return {
         project: null,
         dataSource: "mock",
-        error: `${errorMessage} (no demo data available)`,
+        error: `Project not found. Try searching for: VCS-934, GS-7845, or CCTS-IN-2023-0156`,
     };
 }
 

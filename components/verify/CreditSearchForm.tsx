@@ -62,7 +62,7 @@ export function CreditSearchForm({
           <div className="flex-1">
             <Input
               type="text"
-              placeholder="Enter Verra ID, Gold Standard ID, or Project UID..."
+              placeholder="Try: VCS-934, GS-7845, CCTS-IN-2023-0156, or project name..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="bg-input border-border text-foreground placeholder:text-muted-foreground h-12 text-base"
@@ -71,7 +71,8 @@ export function CreditSearchForm({
               minLength={2}
             />
             <p className="text-xs text-muted-foreground mt-3 font-light">
-              Example: VCS-1234, GS-5678, or search by project name
+              Search by registry ID (VCS-934, GS-7845) or project name (Rimba
+              Raya, Bhadla Solar)
             </p>
             {searchError && (
               <div className="mt-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">

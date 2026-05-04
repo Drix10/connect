@@ -67,6 +67,11 @@ export default function VerifyPage() {
             Search major registries using live CAD Trust data and verify credit
             authenticity
           </p>
+          <p className="text-sm text-muted-foreground/70 font-light max-w-2xl mt-2">
+            Try: <span className="text-primary font-medium">VCS-934</span>,{" "}
+            <span className="text-primary font-medium">GS-7845</span>, or{" "}
+            <span className="text-primary font-medium">CCTS-IN-2023-0156</span>
+          </p>
         </motion.div>
 
         <motion.div
